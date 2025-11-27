@@ -1,0 +1,12 @@
+/* force-app/main/default/lwc/documentGenerator/documentGenerator.css */
+.spinner-container {
+    position: relative;
+    height: 10rem;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Salesforce Sans', Arial, sans-serif;
+    font-size: 1rem;
+}

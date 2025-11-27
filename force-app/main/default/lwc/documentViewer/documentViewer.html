@@ -1,0 +1,261 @@
+<template>
+    <lightning-card title="Document Viewer" icon-name="standard:document">
+        <!-- ACTION BUTTONS -->
+        <div class="slds-m-around_medium" slot="actions">
+            <lightning-button-group>
+                <!-- Button to trigger AI analysis -->
+                <lightning-button
+                    label="Analyze Document"
+                    icon-name="utility:einstein"
+                    onclick={handleAnalyzeDocument}
+                    disabled={isAnalyzing}>
+                </lightning-button>
+
+                <!-- More actions menu -->
+                <lightning-button-menu
+                    alternative-text="More actions"
+                    onselect={handleMenuSelect}>
+                    <lightning-menu-item
+                        value="requestSignature"
+                        label="Request Signature">
+                    </lightning-menu-item>
+                    <lightning-menu-item
+                        value="downloadPDF"
+                        label="Download PDF">
+                    </lightning-menu-item>
+
+                      <!-- <lightning-menu-item
+                        value="downloadPDF"
+                        label="Download PDF"
+                        onclick={handleDownloadPDF}
+                        variant="neutral"> -->
+
+                        
+                    <lightning-menu-item
+                        value="auditTrail"
+                        label="View Audit Trail">
+                    </lightning-menu-item>
+                </lightning-button-menu>
+            </lightning-button-group>
+        </div>
+
+        <div class="slds-card__body slds-card__body_inner">
+            <!-- LOADING SPINNER -->
+            <template if:true={isLoading}>
+                <div class="slds-text-align_center slds-p-around_large">
+                    <lightning-spinner
+                        alternative-text="Loading document..."
+                        size="medium">
+                    </lightning-spinner>
+                </div>
+            </template>
+
+            <!-- DOCUMENT CONTENT -->
+            <template if:true={documentData}>
+                <!-- Document Content Display -->
+                <div class="document-content-display slds-box slds-m-bottom_large">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">
+                        Document Content
+                    </h3>
+                    <lightning-formatted-rich-text
+                        value={documentData.GeneratedClause__c}>
+                    </lightning-formatted-rich-text>
+                </div>
+
+                <!-- AI Analysis Section -->
+                <template if:true={isAnalyzing}>
+                    <div class="slds-box slds-m-bottom_large slds-text-align_center">
+                        <lightning-spinner
+                            alternative-text="Analyzing..."
+                            size="medium">
+                        </lightning-spinner>
+                        <p class="slds-m-top_medium">
+                            Analyzing document with AI, please wait...
+                        </p>
+                    </div>
+                </template>
+
+                <template if:true={analysisResult}>
+                    <lightning-card
+                        title="AI Document Intelligence Analysis"
+                        icon-name="utility:einstein">
+                        <div class="slds-p-around_medium analysis-section">
+                            <div class="result-item slds-m-bottom_medium">
+                                <p class="result-label">
+                                    <strong>Analysis Summary</strong>
+                                </p>
+                                <p>{analysisResult.summary}</p>
+                            </div>
+
+                            <div class="result-item slds-m-bottom_medium">
+                                <p class="result-label">
+                                    <strong>Compliance Risks Identified</strong>
+                                </p>
+                                <p>{analysisResult.risks}</p>
+                            </div>
+
+                            <lightning-layout horizontal-align="spread">
+                                <lightning-layout-item padding="around-small">
+                                    <div class="result-item">
+                                        <p class="result-label">
+                                            <strong>Sentiment</strong>
+                                        </p>
+                                        <p>{analysisResult.sentiment}</p>
+                                    </div>
+                                </lightning-layout-item>
+
+                                <lightning-layout-item padding="around-small">
+                                    <div class="result-item">
+                                        <p class="result-label">
+                                            <strong>Sentiment Score</strong>
+                                        </p>
+                                        <p>
+                                            <lightning-formatted-number
+                                                value={analysisResult.sentimentScore}
+                                                format-style="percent-fixed">
+                                            </lightning-formatted-number>
+                                        </p>
+                                    </div>
+                                </lightning-layout-item>
+
+                                <lightning-layout-item padding="around-small">
+                                    <div class="result-item">
+                                        <p class="result-label">
+                                            <strong>Confidence Score</strong>
+                                        </p>
+                                        <p>
+                                            <lightning-formatted-number
+                                                value={analysisResult.confidenceScore}
+                                                format-style="percent-fixed">
+                                            </lightning-formatted-number>
+                                        </p>
+                                    </div>
+                                </lightning-layout-item>
+
+                                <lightning-layout-item padding="around-small">
+                                    <div class="result-item">
+                                        <p class="result-label">
+                                            <strong>Model Used</strong>
+                                        </p>
+                                        <p>{analysisResult.model}</p>
+                                    </div>
+                                </lightning-layout-item>
+                            </lightning-layout>
+                        </div>
+                    </lightning-card>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+
+    <!-- SIGNATURE REQUEST MODAL -->
+    <template if:true={showSignatureModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal Header -->
+                <header class="slds-modal__header">
+                    <button
+                        class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Close"
+                        onclick={handleCloseSignatureModal}>
+                        <lightning-icon
+                            icon-name="utility:close"
+                            size="small">
+                        </lightning-icon>
+                    </button>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">
+                        Request Signature
+                    </h2>
+                </header>
+
+                <!-- Modal Body -->
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-input
+                        type="email"
+                        label="Signer Email"
+                        value={signerEmail}
+                        onchange={handleSignerEmailChange}
+                        required>
+                    </lightning-input>
+
+                    <lightning-input
+                        class="slds-m-top_medium"
+                        type="text"
+                        label="Signer Name"
+                        value={signerName}
+                        onchange={handleSignerNameChange}
+                        required>
+                    </lightning-input>
+                </div>
+
+                <!-- Modal Footer -->
+                <footer class="slds-modal__footer">
+                    <lightning-button
+                        label="Cancel"
+                        onclick={handleCloseSignatureModal}
+                        class="slds-m-right_small">
+                    </lightning-button>
+
+                    <lightning-button
+                        variant="brand"
+                        label="Send Request"
+                        onclick={handleSendSignatureRequest}
+                        disabled={isSendDisabled}>
+                    </lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- AUDIT TRAIL MODAL -->
+    <template if:true={showAuditModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button
+                        class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Close"
+                        onclick={handleCloseAuditModal}>
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                    </button>
+                    <h2 class="slds-text-heading_medium">
+                        Document Audit Trail
+                    </h2>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <template if:true={isAuditLoading}>
+                        <div class="slds-text-align_center slds-p-around_large">
+                            <lightning-spinner
+                                alternative-text="Loading audit trail..."
+                                size="medium">
+                            </lightning-spinner>
+                        </div>
+                    </template>
+
+                    <template if:false={isAuditLoading}>
+                        <template if:true={auditTrailData}>
+                            <lightning-datatable
+                                key-field="Id"
+                                data={auditTrailData}
+                                columns={auditColumns}>
+                            </lightning-datatable>
+                        </template>
+                        <template if:false={auditTrailData}>
+                            <p>No audit entries found for this document.</p>
+                        </template>
+                    </template>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button
+                        label="Close"
+                        onclick={handleCloseAuditModal}>
+                    </lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

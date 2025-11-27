@@ -1,0 +1,47 @@
+.analysis-section {
+    background-color: #f3f4f6;
+    border-radius: .25rem;
+}
+
+.result-item .result-label {
+    font-size: 0.8rem;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+/* Align the action buttons properly in the card header */
+.slds-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Ensure actions are aligned to the right */
+[slot="actions"] {
+    margin-left: auto !important;
+}
+
+/* Style for dropdown menu to avoid sticking to the corner */
+lightning-button-menu {
+    margin-right: 10px;
+}
+
+/* Optional: Improve spacing of entire action block */
+.slds-m-around_medium {
+    margin-right: 1rem;
+}
+
+/* Fix modal alignment if needed */
+.slds-modal__container {
+    max-width: 60rem !important;
+}
+/* Fix alignment of lightning-button-menu inside card header */
+.slds-card__header .slds-button_icon-border-filled,
+.slds-card__header .slds-button-menu {
+    margin-right: 0.5rem !important;
+}
+
+/* Ensure menu opens directly below the button */
+.slds-dropdown {
+    right: auto !important;
+}

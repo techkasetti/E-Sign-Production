@@ -1,0 +1,33 @@
+<apex:page standardController="DocumentLifecycleConfiguration__c" 
+           renderAs="pdf" 
+           showHeader="false" 
+           sidebar="false">
+
+    <apex:outputPanel layout="block" 
+        style="font-family: Arial, sans-serif; font-size: 11pt; color:#333; padding: 20px;">
+
+        <h1>
+            {!DocumentLifecycleConfiguration__c.DocumentTitle__c}
+        </h1>
+
+        <div>
+            Region: {!DocumentLifecycleConfiguration__c.Region__c}
+             | 
+            Role: {!DocumentLifecycleConfiguration__c.Role__c}
+             | 
+            Type: {!DocumentLifecycleConfiguration__c.ContractType__c}
+             | 
+            Compliance: {!DocumentLifecycleConfiguration__c.ComplianceStatus__c}
+        </div>
+
+        <h2>
+            Agreement Content
+        </h2>
+
+        <div>
+            {!DocumentLifecycleConfiguration__c.GeneratedClause__c}
+        </div>
+
+    </apex:outputPanel>
+
+</apex:page>

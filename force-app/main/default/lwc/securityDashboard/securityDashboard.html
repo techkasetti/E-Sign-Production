@@ -1,0 +1,66 @@
+<template>
+    <lightning-card title="Real-Time Security Dashboard" icon-name="utility:shield">
+        <lightning-button slot="actions" label="Refresh" onclick={handleRefresh}></lightning-button>
+        <div class="slds-p-around_medium">
+            <!-- METRIC CARDS -->
+            <div class="slds-grid slds-gutters slds-wrap">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <div class="metric-card">
+                        <div class="metric-value">{averageRiskScore}</div>
+                        <div class="metric-label">Average Risk Score (Today)</div>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <div class="metric-card">
+                        <div class="metric-value">{suspiciousActivities}</div>
+                        <div class="metric-label">Suspicious Activities (Today)</div>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <div class="metric-card">
+                        <div class="metric-value">{totalActiveThreats}</div>
+                        <div class="metric-label">Active High-Risk Threats</div>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <div class="metric-card">
+                        <div class="metric-value" style={systemHealthStyle}>{systemHealth}</div>
+                        <div class="metric-label">System Health</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTIVE THREATS LIST -->
+            <div class="slds-m-top_large">
+                <h2 class="slds-text-heading_medium slds-m-bottom_medium">Active High-Risk Threats</h2>
+                <template if:true={activeThreats.length}>
+                    <ul class="slds-list_vertical slds-has-dividers_top-space">
+                        <template for:each={activeThreats} for:item="threat">
+                            <li key={threat.id} class="slds-item slds-p-vertical_medium">
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-12 slds-text-align_center">
+                                        <lightning-badge label={threat.threatLevel} class={threat.badgeVariant}></lightning-badge>
+                                        <div class="risk-score">Score: {threat.riskScore}</div>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-1 slds-medium-size_7-of-12">
+                                        <p class="slds-text-heading_small slds-m-bottom_x-small"><strong>Threat:</strong> {threat.description}</p>
+                                        <p><strong>User:</strong> {threat.userId}</p>
+                                        <p><strong>Activity:</strong> {threat.activity}</p>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-12 slds-text-align_right">
+                                        <p class="timestamp">{threat.formattedTimestamp}</p>
+                                    </div>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+                <template if:false={activeThreats.length}>
+                    <div class="slds-box slds-text-align_center slds-p-around_medium">
+                        <p>No active high-risk threats detected.</p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </lightning-card>
+</template>
