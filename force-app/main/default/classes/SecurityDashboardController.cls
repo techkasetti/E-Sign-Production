@@ -1,13 +1,12 @@
 public class SecurityDashboardController {
 
-    @AuraEnabled(cacheable=false)
+    @AuraEnabled(cacheable=true)
     public static Map<String, Object> getThreatMetrics() {
         Map<String, Object> metrics = new Map<String, Object>();
         try {
-            // This query now correctly looks at ThreatIntelligence__c
             List<AggregateResult> riskResults = [
-                SELECT AVG(RiskScore__c) avgScore, COUNT(Id) totalThreats 
-                FROM ThreatIntelligence__c 
+                SELECT AVG(RiskScore__c) avgScore, COUNT(Id) totalThreats
+                FROM ThreatIntelligence__c
                 WHERE CreatedDate = LAST_N_DAYS:1 AND RiskScore__c >= 40
             ];
 
@@ -19,13 +18,16 @@ public class SecurityDashboardController {
                 metrics.put('suspiciousActivities', 0);
             }
 
-            // This query correctly counts high-risk threats from the right object
             List<AggregateResult> highRiskThreats = [
-                SELECT COUNT(Id) highRiskCount 
-                FROM ThreatIntelligence__c 
-                WHERE CreatedDate = LAST_N_DAYS:1 AND RiskLevel__c IN ('HIGH', 'CRITICAL')
+                SELECT COUNT(Id) highRiskCount
+                FROM ThreatIntelligence__c
+                WHERE CreatedDate = LAST_N_DAYS:1
+                AND RiskLevel__c IN ('HIGH', 'CRITICAL')
             ];
-            metrics.put('activeHighRiskThreats', highRiskThreats.isEmpty() ? 0 : highRiskThreats[0].get('highRiskCount'));
+
+            metrics.put('activeHighRiskThreats',
+                highRiskThreats.isEmpty() ? 0 : highRiskThreats[0].get('highRiskCount')
+            );
             metrics.put('systemHealth', 'HEALTHY');
 
         } catch (Exception e) {
@@ -38,16 +40,18 @@ public class SecurityDashboardController {
         return metrics;
     }
 
-    @AuraEnabled(cacheable=false)
+    // *** CORRECTION: Changed cacheable=false to cacheable=true ***
+    @AuraEnabled(cacheable=true)
     public static List<ActiveThreat> getActiveThreats() {
         List<ActiveThreat> activeThreats = new List<ActiveThreat>();
         try {
-            // This query now correctly gets the list of threats from ThreatIntelligence__c
             List<ThreatIntelligence__c> threats = [
-                SELECT Id, CreatedById, RiskLevel__c, RiskScore__c, Description__c, CreatedDate 
-                FROM ThreatIntelligence__c 
-                WHERE CreatedDate = LAST_N_DAYS:1 AND RiskScore__c >= 40 
-                ORDER BY RiskScore__c DESC, CreatedDate DESC 
+                SELECT Id, CreatedById, RiskLevel__c, RiskScore__c,
+                       Description__c, CreatedDate
+                FROM ThreatIntelligence__c
+                WHERE CreatedDate = LAST_N_DAYS:1
+                AND RiskScore__c >= 40
+                ORDER BY RiskScore__c DESC, CreatedDate DESC
                 LIMIT 50
             ];
 
@@ -74,7 +78,6 @@ public class SecurityDashboardController {
         return timestamp.format('h:mm:ss a');
     }
 
-    // Wrapper class for active threats
     public class ActiveThreat {
         @AuraEnabled public String id;
         @AuraEnabled public String userId;

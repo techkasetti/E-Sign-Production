@@ -1,5 +1,4 @@
 public with sharing class SignatureRequestController {
-
     @AuraEnabled(cacheable=false)
     public static String initiateSignatureRequest(String documentId, String signerEmail, String signerName) {
         if (String.isBlank(documentId) || String.isBlank(signerEmail) || String.isBlank(signerName)) {
@@ -10,12 +9,11 @@ public with sharing class SignatureRequestController {
                 DocumentId__c = documentId,
                 SignerEmail__c = signerEmail,
                 SignerName__c = signerName,
-                Status__c = 'Pending' // Corrected from Sync_Status__c
+                Status__c = 'Pending'
             );
             insert request;
             
-            // It seems you may have a typo in your original file, sendSignatureRequest expects a List<Id>
-            // For now, wrapping it in a new list to match a potential method signature.
+// Corrected line
 EmailNotificationService.sendSignatureRequest(request.Id);
             AuditTrailManager.logSignatureRequest(documentId, 'Signature Request Created', 'Signature request sent to: ' + signerEmail);
             return request.Id;
@@ -29,8 +27,8 @@ EmailNotificationService.sendSignatureRequest(request.Id);
     public static Signature_Request__c getSignatureRequest(String requestId) {
         try {
             return [
-                SELECT Id, SignerName__c, Status__c, CompletedDate__c,
-                       DocumentId__c, DocumentId__r.DocumentTitle__c, DocumentId__r.GeneratedClause__c
+                SELECT Id, SignerName__c, Status__c, CompletedDate__c, DocumentId__c,
+                       DocumentId__r.DocumentTitle__c, DocumentId__r.GeneratedClause__c
                 FROM Signature_Request__c
                 WHERE Id = :requestId
                 LIMIT 1
@@ -57,11 +55,9 @@ EmailNotificationService.sendSignatureRequest(request.Id);
                 WHERE Id = :requestId
                 LIMIT 1
             ];
-
-            if (request.Status__c == 'Signed' || request.Status__c == 'Completed') {
+            if (request.Status__c == 'Signed' | request.Status__c == 'Completed') {
                 throw new AuraHandledException('This document has already been signed.');
             }
-            
             request.Status__c = 'Signed';
             request.CompletedDate__c = System.now();
             request.SignatureMethod__c = signatureMethod;
@@ -74,7 +70,7 @@ EmailNotificationService.sendSignatureRequest(request.Id);
             throw new AuraHandledException('Failed to submit signature: ' + e.getMessage());
         }
     }
-    
+
     @AuraEnabled(cacheable=true)
     public static DocumentData getDocumentData(String documentId) {
         try {
@@ -96,10 +92,10 @@ EmailNotificationService.sendSignatureRequest(request.Id);
             throw new AuraHandledException('Failed to retrieve document data: ' + e.getMessage());
         }
     }
-    
-    // Wrapper class for getDocumentData
+
     public class DocumentData {
         @AuraEnabled public DocumentLifecycleConfiguration__c document { get; set; }
         @AuraEnabled public List<Signature_Request__c> signatureRequests { get; set; }
     }
 }
+

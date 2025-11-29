@@ -1,29 +1,38 @@
+/* securityDashboard.css */
 .metric-card {
-    background-color: #f3f3f3;
-    border-radius: .25rem;
-    padding: 1rem;
-    text-align: center;
     border: 1px solid #dddbda;
+    border-radius: .25rem;
+    background-color: #f3f2f2;
 }
+
 .metric-value {
     font-size: 2.5rem;
-    font-weight: bold;
+    font-weight: 300;
     line-height: 1.2;
 }
+
 .metric-label {
-    font-size: 0.9rem;
-    color: #555;
+    font-size: 0.875rem;
+    color: #514f4d;
+    text-transform: uppercase;
 }
-.risk-score {
-    font-size: 0.9rem;
-    font-weight: bold;
-    margin-top: 4px;
+
+/* Specific styling for the System Health text */
+.slds-theme_success {
+    color: #2e844a;
 }
-.timestamp {
-    font-size: 0.8rem;
-    color: #555;
+
+.slds-theme_error {
+    color: #c23934;
 }
-.slds-badge_warning {
-    background-color: orange;
-    color: white;
+
+/* Styling for the risk level column in the data table */
+.slds-text-color_error {
+    color: #c23934;
+}
+.slds-text-color_warning {
+    color: #ffb75d;
+}
+.slds-text-font_bold {
+    font-weight: 700;
 }

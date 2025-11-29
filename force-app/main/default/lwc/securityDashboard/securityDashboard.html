@@ -1,66 +1,73 @@
+<!-- securityDashboard.html -->
 <template>
     <lightning-card title="Real-Time Security Dashboard" icon-name="utility:shield">
-        <lightning-button slot="actions" label="Refresh" onclick={handleRefresh}></lightning-button>
+        <lightning-button label="Refresh" slot="actions" onclick={handleRefresh}></lightning-button>
+
         <div class="slds-p-around_medium">
-            <!-- METRIC CARDS -->
-            <div class="slds-grid slds-gutters slds-wrap">
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
-                    <div class="metric-card">
+            <!-- Metric Tiles Section -->
+            <lightning-layout multiple-rows="true" pull-to-boundary="small">
+                <!-- Average Risk Score Tile -->
+                <lightning-layout-item size="12" small-device-size="6" medium-device-size="3" padding="around-small">
+                    <div class="slds-box slds-box_link slds-p-around_medium slds-text-align_center metric-card">
                         <div class="metric-value">{averageRiskScore}</div>
                         <div class="metric-label">Average Risk Score (Today)</div>
                     </div>
-                </div>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
-                    <div class="metric-card">
+                </lightning-layout-item>
+
+                <!-- Suspicious Activities Tile -->
+                <lightning-layout-item size="12" small-device-size="6" medium-device-size="3" padding="around-small">
+                    <div class="slds-box slds-box_link slds-p-around_medium slds-text-align_center metric-card">
                         <div class="metric-value">{suspiciousActivities}</div>
                         <div class="metric-label">Suspicious Activities (Today)</div>
                     </div>
-                </div>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
-                    <div class="metric-card">
-                        <div class="metric-value">{totalActiveThreats}</div>
+                </lightning-layout-item>
+
+                <!-- Active High-Risk Threats Tile -->
+                <lightning-layout-item size="12" small-device-size="6" medium-device-size="3" padding="around-small">
+                    <div class="slds-box slds-box_link slds-p-around_medium slds-text-align_center metric-card">
+                        <div class="metric-value">{activeHighRiskThreats}</div>
                         <div class="metric-label">Active High-Risk Threats</div>
                     </div>
-                </div>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
-                    <div class="metric-card">
-                        <div class="metric-value" style={systemHealthStyle}>{systemHealth}</div>
+                </lightning-layout-item>
+
+                <!-- System Health Tile -->
+                <lightning-layout-item size="12" small-device-size="6" medium-device-size="3" padding="around-small">
+                    <div class="slds-box slds-box_link slds-p-around_medium slds-text-align_center metric-card">
+                        <!-- *** CORRECTION: Replaced deprecated 'lwc:class' with standard 'class' attribute *** -->
+                        <div class={healthClass}>{systemHealth}</div>
                         <div class="metric-label">System Health</div>
                     </div>
-                </div>
-            </div>
+                </lightning-layout-item>
+            </lightning-layout>
 
-            <!-- ACTIVE THREATS LIST -->
+            <!-- Active Threats Table Section -->
             <div class="slds-m-top_large">
                 <h2 class="slds-text-heading_medium slds-m-bottom_medium">Active High-Risk Threats</h2>
-                <template if:true={activeThreats.length}>
-                    <ul class="slds-list_vertical slds-has-dividers_top-space">
-                        <template for:each={activeThreats} for:item="threat">
-                            <li key={threat.id} class="slds-item slds-p-vertical_medium">
-                                <div class="slds-grid slds-wrap">
-                                    <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-12 slds-text-align_center">
-                                        <lightning-badge label={threat.threatLevel} class={threat.badgeVariant}></lightning-badge>
-                                        <div class="risk-score">Score: {threat.riskScore}</div>
-                                    </div>
-                                    <div class="slds-col slds-size_1-of-1 slds-medium-size_7-of-12">
-                                        <p class="slds-text-heading_small slds-m-bottom_x-small"><strong>Threat:</strong> {threat.description}</p>
-                                        <p><strong>User:</strong> {threat.userId}</p>
-                                        <p><strong>Activity:</strong> {threat.activity}</p>
-                                    </div>
-                                    <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-12 slds-text-align_right">
-                                        <p class="timestamp">{threat.formattedTimestamp}</p>
-                                    </div>
-                                </div>
-                            </li>
-                        </template>
-                    </ul>
+                <template if:true={hasThreats}>
+                    <lightning-datatable
+                        key-field="id"
+                        data={activeThreats}
+                        columns={columns}
+                        hide-checkbox-column="true"
+                        show-row-number-column="false">
+                    </lightning-datatable>
                 </template>
-                <template if:false={activeThreats.length}>
+                <template if:false={hasThreats}>
                     <div class="slds-box slds-text-align_center slds-p-around_medium">
-                        <p>No active high-risk threats detected.</p>
+                        <lightning-icon icon-name="utility:success" variant="success" size="large"></lightning-icon>
+                        <p class="slds-m-top_medium">No active high-risk threats detected.</p>
                     </div>
                 </template>
             </div>
         </div>
+
+        <!-- Error Panel -->
+        <template if:true={error}>
+            <div class="slds-p-around_medium">
+                <div class="slds-box slds-theme_error">
+                    <p>An error occurred while loading dashboard data. Please refresh the page or contact support.</p>
+                </div>
+            </div>
+        </template>
     </lightning-card>
 </template>
