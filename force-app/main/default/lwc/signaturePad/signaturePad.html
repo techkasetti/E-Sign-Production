@@ -1,173 +1,163 @@
 <template>
-    <lightning-card icon-name="standard:signature">
-        <!-- Loading State -->
-        <template if:true={isLoading}>
-            <div class="spinner-container">
-                <lightning-spinner alternative-text="Loading..." size="large"></lightning-spinner>
-            </div>
-        </template>
+    <lightning-card title="Electronic Signature" icon-name="standard:signature">
+        <div class="slds-card__body slds-card__body_inner">
 
-        <!-- Main Content (when not complete) -->
-        <template if:false={isSignatureComplete}>
-            <div class="slds-p-around_medium">
-                <!-- Document Information -->
-                <div if:true={signatureRequest} class="document-info slds-box slds-m-bottom_large">
-                    <h1 class="slds-text-heading_large slds-m-bottom_small">{signatureRequest.DocumentId__r.DocumentTitle__c}</h1>
-                    <p class="slds-text-body_regular">
-                        Requested for: <strong>{signatureRequest.SignerName__c}</strong>
-                    </p>
+            <!-- Loading Spinner -->
+            <template if:true={isLoading}>
+                <div class="slds-align_absolute-center">
+                    <lightning-spinner
+                        alternative-text="Loading..."
+                        variant="brand"
+                        size="medium">
+                    </lightning-spinner>
                 </div>
-                
-                <!-- Document Content -->
-                <div if:true={documentContent} class="document-content slds-box slds-m-bottom_large">
-                    <h3 class="slds-text-heading_small slds-m-bottom_small">Document to Sign</h3>
-                    <div class="document-text">
-                        <lightning-formatted-rich-text value={documentContent}></lightning-formatted-rich-text>
-                    </div>
-                </div>
+            </template>
 
-                <!-- Signature Methods -->
-                <div class="signature-methods slds-box">
-                    <h3 class="slds-text-heading_small slds-m-bottom_medium">Please Provide Your Electronic Signature</h3>
-                    
-                    <lightning-radio-group
-                        name="signatureMethod"
-                        label="Signature Method"
-                        options={signatureMethodOptions}
-                        value={selectedSignatureMethod}
-                        onchange={handleSignatureMethodChange}
-                        type="radio"
-                        class="slds-m-bottom_medium">
-                    </lightning-radio-group>
-                    
-                    <!-- Typed Signature -->
-                    <template if:true={isTypedSignature}>
-                        <div class="signature-section">
+            <!-- Main Content: Shown when NOT loading and signature is NOT complete -->
+            <template if:false={isLoading}>
+
+                <template if:false={isSignatureComplete}>
+
+                    <!-- THIS IS THE CRITICAL FIX: Only render if signatureRequest is loaded -->
+                    <template if:true={signatureRequest}>
+
+                        <!-- 1. Document Information -->
+                        <div class="slds-box slds-theme_shade slds-m-bottom_medium">
+                            <h3 class="slds-text-heading_small slds-m-bottom_small">
+                                Document to Sign
+                            </h3>
+                            <p>{signatureRequest.DocumentId__r.DocumentTitle__c}</p>
+                        </div>
+
+                        <!-- 2. Signature Method Selection -->
+                        <div class="slds-m-bottom_medium">
+                            <lightning-radio-group
+                                name="signatureMethod"
+                                label="Signature Method"
+                                options={signatureMethodOptions}
+                                value={selectedSignatureMethod}
+                                onchange={handleSignatureMethodChange}
+                                type="radio"
+                                required>
+                            </lightning-radio-group>
+                        </div>
+
+                        <!-- 3. Conditional Signature Input Sections -->
+
+                        <template if:true={isTypedSignature}>
+                            <div class="signature-section">
+                                <lightning-input
+                                    type="text"
+                                    label="Type your full legal name"
+                                    value={typedSignature}
+                                    onchange={handleTypedSignatureChange}
+                                    required>
+                                </lightning-input>
+
+                                <template if:true={typedSignature}>
+                                    <div class="signature-preview slds-m-top_small">
+                                        <div class="typed-signature-display">
+                                            {typedSignature}
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template if:true={isDrawSignature}>
+                            <div class="signature-section">
+                                <p class="slds-form-element__label slds-m-bottom_small">
+                                    Draw your signature in the box below
+                                </p>
+
+                                <div class="canvas-container">
+                                    <canvas
+                                        class="signature-canvas"
+                                        width="500"
+                                        height="200"
+                                        onmousedown={startDrawing}
+                                        onmousemove={draw}
+                                        onmouseup={stopDrawing}
+                                        ontouchstart={startDrawing}
+                                        ontouchmove={draw}
+                                        ontouchend={stopDrawing}>
+                                    </canvas>
+                                </div>
+
+                                <div class="slds-text-align_right slds-m-top_x-small">
+                                    <lightning-button
+                                        label="Clear"
+                                        onclick={handleClearCanvas}
+                                        variant="neutral">
+                                    </lightning-button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:true={isUploadSignature}>
+                            <div class="signature-section">
+                                <lightning-file-upload
+                                    label="Upload an image of your signature"
+                                    name="signatureUpload"
+                                    accept=".png.jpg.jpeg"
+                                    onuploadfinished={handleUploadFinished}
+                                    record-id={recordId}
+                                    multiple="false">
+                                </lightning-file-upload>
+
+                                <template if:true={uploadedSignatureUrl}>
+                                    <div class="signature-preview slds-m-top_medium">
+                                        <img
+                                            src={uploadedSignatureUrl}
+                                            alt="Uploaded Signature Preview"
+                                            class="uploaded-signature-preview"/>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- 4. Agreement Checkbox -->
+                        <div class="slds-m-top_large slds-m-bottom_large">
                             <lightning-input
-                                type="text"
-                                label="Type your full legal name"
-                                value={typedSignature}
-                                onchange={handleTypedSignatureChange}
-                                placeholder="Enter your full name">
+                                type="checkbox"
+                                label="I agree that this electronic signature has the same legal effect as a hand-written signature."
+                                checked={agreementAccepted}
+                                onchange={handleAgreementChange}
+                                required>
                             </lightning-input>
-                            <template if:true={typedSignature}>
-                                <div class="signature-preview slds-m-top_small">
-                                    <div class="typed-signature-display">{typedSignature}</div>
-                                </div>
-                            </template>
                         </div>
-                    </template>
 
-                    <!-- Canvas Signature -->
-                    <template if:true={isDrawSignature}>
-                        <div class="signature-section">
-                            <div class="canvas-container" style="background-color: white;">
-                                <canvas
-                                    lwc:ref="signatureCanvas"
-                                    class="signature-canvas"
-                                    onmousedown={handleMouseDown}
-                                    onmousemove={handleMouseMove}
-                                    onmouseup={handleMouseUp}
-                                    onmouseout={handleMouseUp}
-                                    ontouchstart={handleTouchStart}
-                                    ontouchmove={handleTouchMove}
-                                    ontouchend={handleTouchEnd}
-                                    width="500"
-                                    height="200">
-                                </canvas>
-                            </div>
-                            <div class="canvas-controls slds-m-top_small">
-                                <lightning-button label="Clear" onclick={handleClearCanvas} variant="neutral"></lightning-button>
-                            </div>
+                        <!-- 5. Submit Button -->
+                        <div class="slds-text-align_center">
+                            <lightning-button
+                                variant="brand"
+                                label="Submit Signature"
+                                title="Submit Signature"
+                                onclick={handleSubmitSignature}
+                                disabled={isSubmitDisabled}>
+                            </lightning-button>
                         </div>
+
                     </template>
-                    
-                    <!-- Upload Signature -->
-                    <template if:true={isUploadSignature}>
-                        <div class="signature-section">
-                            <lightning-file-upload
-                                label="Upload Signature Image"
-                                name="signatureUpload"
-                                accept=".jpg, .jpeg, .png"
-                                record-id={recordId}
-                                onuploadfinished={handleUploadFinished}
-                                multiple="false">
-                            </lightning-file-upload>
-                            <template if:true={uploadedSignatureUrl}>
-                                <div class="slds-m-top_small">
-                                    <img src={uploadedSignatureUrl} alt="Uploaded Signature" class="uploaded-signature-preview"/>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                    
-                </div>
-                
-                <!-- Agreement and Submit -->
-                <div class="slds-m-top_large">
-                    <lightning-input
-                        type="checkbox"
-                        label="I agree that this electronic signature has the same legal effect as a handwritten signature."
-                        checked={agreementAccepted}
-                        onchange={handleAgreementChange}
-                        required>
-                    </lightning-input>
-                    <div class="slds-m-top_large slds-text-align_right">
-                        <lightning-button
-                            label="Submit Signature"
-                            variant="brand"
-                            onclick={handleSubmitSignature}
-                            disabled={isSubmitDisabled}>
-                        </lightning-button>
+                </template>
+
+                <!-- Signature Complete State -->
+                <template if:true={isSignatureComplete}>
+                    <div class="slds-box slds-theme_success slds-text-align_center slds-p-around_large">
+                        <lightning-icon
+                            icon-name="utility:success"
+                            variant="success"
+                            size="large">
+                        </lightning-icon>
+
+                        <h2 class="slds-text-heading_medium slds-m-top_medium">
+                            Signature Submitted
+                        </h2>
+                        <p>Thank you. Your signature has been recorded successfully.</p>
                     </div>
-                </div>
-            </div>
-        </template>
+                </template>
 
-        <!-- Success State -->
-        <template if:true={isSignatureComplete}>
-            <div class="success-container slds-p-around_large slds-text-align_center">
-                <lightning-icon icon-name="utility:success" size="large" variant="success"></lightning-icon>
-                <h2 class="slds-text-heading_medium slds-m-vertical_medium">Signature Submitted Successfully!</h2>
-                <p>Thank you. Your signature has been recorded and the document is now complete.</p>
-            </div>
-        </template>
-    </lightning-card>
-
-
-
-//fraud detection and behavioral analysis
-
-
-
-
-<!-- Add this block for the MFA Modal -->
-<template if:true={showMfaModal}>
-    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-        <div class="slds-modal__container">
-            <header class="slds-modal__header">
-                <h2 class="slds-text-heading_medium">Additional Verification Required</h2>
-            </header>
-            <div class="slds-modal__content slds-p-around_medium">
-                <p class="slds-m-bottom_medium">For your security, please enter the One-Time Password (OTP) sent to your email address to proceed with signing.</p>
-                <lightning-input
-                    type="text"
-                    label="One-Time Password"
-                    value={mfaCode}
-                    onchange={handleMfaCodeChange}
-                    required>
-                </lightning-input>
-            </div>
-            <footer class="slds-modal__footer">
-                <lightning-button label="Cancel" onclick={handleMfaCancel}></lightning-button>
-                <lightning-button label="Verify" variant="brand" onclick={handleMfaVerify} class="slds-m-left_x-small"></lightning-button>
-            </footer>
+            </template>
         </div>
-    </section>
-    <div class="slds-backdrop slds-backdrop_open"></div>
-</template>
-
-
-
-
+    </lightning-card>
 </template>

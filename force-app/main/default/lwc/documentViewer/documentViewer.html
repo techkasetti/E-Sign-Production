@@ -168,25 +168,75 @@
                     </h2>
                 </header>
 
-                <!-- Modal Body -->
-                <div class="slds-modal__content slds-p-around_medium">
-                    <lightning-input
-                        type="email"
-                        label="Signer Email"
-                        value={signerEmail}
-                        onchange={handleSignerEmailChange}
-                        required>
-                    </lightning-input>
+               <!-- Modal Body -->
+<!-- Modal Body -->
+<div class="slds-modal__content slds-p-around_medium">
 
-                    <lightning-input
-                        class="slds-m-top_medium"
-                        type="text"
-                        label="Signer Name"
-                        value={signerName}
-                        onchange={handleSignerNameChange}
-                        required>
-                    </lightning-input>
-                </div>
+    <!-- Fraud Detection Toggles -->
+    <div class="slds-box slds-m-bottom_medium">
+        <h3 class="slds-text-heading_small slds-m-bottom_small">Fraud Detection Options</h3>
+        <p class="slds-form-element__label slds-m-bottom_x-small">
+            Select which fraud checks to run for this request:
+        </p>
+
+        <lightning-input
+            type="toggle"
+            label="IP Anomaly Detection"
+            name="IP_ANOMALY"
+            message-toggle-active="On"
+            message-toggle-inactive="Off"
+            onchange={handleToggleChange}>
+        </lightning-input>
+
+        <lightning-input
+            type="toggle"
+            label="Location Anomaly (Impossible Travel)"
+            name="LOCATION_ANOMALY"
+            message-toggle-active="On"
+            message-toggle-inactive="Off"
+            onchange={handleToggleChange}>
+        </lightning-input>
+
+        <lightning-input
+            type="toggle"
+            label="Behavioral Anomaly (Signing Speed)"
+            name="BEHAVIORAL_ANOMALY"
+            message-toggle-active="On"
+            message-toggle-inactive="Off"
+            onchange={handleToggleChange}>
+        </lightning-input>
+
+        <lightning-input
+            type="toggle"
+            label="Time Anomaly (Unusual Hours)"
+            name="TIME_ANOMALY"
+            message-toggle-active="On"
+            message-toggle-inactive="Off"
+            onchange={handleToggleChange}>
+        </lightning-input>
+    </div>
+
+    <!-- Signer Details -->
+    <lightning-input
+        type="email"
+        label="Signer Email"
+        value={signerEmail}
+        onchange={handleSignerEmailChange}
+        required>
+    </lightning-input>
+
+    <lightning-input
+        class="slds-m-top_medium"
+        type="text"
+        label="Signer Name"
+        value={signerName}
+        onchange={handleSignerNameChange}
+        required>
+    </lightning-input>
+
+</div>
+
+
 
                 <!-- Modal Footer -->
                 <footer class="slds-modal__footer">

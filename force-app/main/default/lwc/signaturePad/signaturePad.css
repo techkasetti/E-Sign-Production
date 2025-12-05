@@ -1,4 +1,34 @@
-/* In signaturePad.css */
-.container {
-    overflow-x: hidden;
+.signature-section {
+    background-color: #fafaf9;
+    border: 1px solid #d8dde6;
+    border-radius: .25rem;
+    padding: 1rem;
+}
+
+.typed-signature-display {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 2.5rem;
+    color: #0176d3;
+    background-color: #ffffff;
+    border: 1px dashed #d8dde6;
+    text-align: center;
+    min-height: 80px;
+    padding: 1rem;
+}
+
+.canvas-container {
+    border: 1px solid #d8dde6;
+    border-radius: .25rem;
+    background-color: white;
+    touch-action: none; /* Important for mobile drawing */
+}
+
+.signature-canvas {
+    cursor: crosshair;
+}
+
+.uploaded-signature-preview {
+    max-width: 300px;
+    max-height: 150px;
+    border: 1px solid #d8dde6;
 }
