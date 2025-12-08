@@ -1,52 +1,55 @@
+<!-- File: securityDashboard.html -->
 <template>
     <lightning-card title="Real-Time Security Dashboard" icon-name="utility:shield">
-        <lightning-button label="Refresh" slot="actions" onclick={handleRefresh}></lightning-button>
-        <div class="slds-p-around_medium">
-            <template if:true={dashboardData}>
-                <!-- Key Metrics Row -->
-                <lightning-layout horizontal-align="space" class="slds-m-bottom_large">
-                    <lightning-layout-item padding="around-small">
-                        <div class="metric-card slds-box slds-text-align_center">
-                            <div class="kpi-value">{dashboardData.highRiskEvents24h}</div>
-                            <div class="kpi-label">High-Risk Events (Last 24h)</div>
-                        </div>
-                    </lightning-layout-item>
-                    <lightning-layout-item padding="around-small">
-                        <div class="metric-card slds-box slds-text-align_center">
-                            <div class="kpi-value">{activeThreatCount}</div>
-                            <div class="kpi-label">Active High-Risk Threats</div>
-                        </div>
-                    </lightning-layout-item>
-                </lightning-layout>
-
-                <!-- Active High-Risk Threats Section -->
-                <h3 class="slds-text-heading_medium slds-m-bottom_medium">Active High-Risk Threats</h3>
-                <template if:true={hasActiveThreats}>
-                    <div class="slds-box">
-                        <template for:each={dashboardData.activeHighRiskThreats} for:item="threat">
-                            <div key={threat.Id} class="threat-item slds-p-around_medium">
-                                <p>
-                                    <lightning-badge label={threat.Fraud_Risk_Level__c} class={threat.riskClass}></lightning-badge>
-                                    <strong class="slds-m-left_small">Score: {threat.Fraud_Score__c}</strong>
-                                </p>
-                                <p><strong>Signer:</strong> {threat.SignerEmail__c}</p>
-                                <p><strong>Time:</strong> <lightning-formatted-date-time value={threat.CreatedDate}></lightning-formatted-date-time></p>
-                                <p><strong>Reasons:</strong> {threat.Fraud_Analysis_Details__c}</p>
-                            </div>
-                        </template>
-                    </div>
-                </template>
-                <template if:false={hasActiveThreats}>
-                    <div class="slds-box slds-text-align_center slds-p-around_medium">
-                        No active high-risk threats detected.
-                    </div>
-                </template>
-            </template>
-            <template if:true={error}>
-                <p>Error loading dashboard: {error}</p>
-            </template>
+        <lightning-button slot="actions" label="Refresh" onclick={handleRefresh}></lightning-button>
+        <div class="slds-card__body slds-card__body_inner">
+            <!-- Loading State -->
             <template if:true={isLoading}>
-                <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+                <div class="slds-is-relative" style="height: 200px;">
+                    <lightning-spinner alternative-text="Loading..." variant="brand"></lightning-spinner>
+                </div>
+            </template>
+
+            <!-- Error State -->
+            <template if:true={error}>
+                <div class="slds-box slds-theme_error slds-text-align_center">
+                    <p>An error occurred while loading the dashboard: {errorText}</p>
+                </div>
+            </template>
+
+            <!-- Dashboard Content -->
+            <template if:false={isLoading}>
+                <!-- Key Metric Cards -->
+                <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_large">
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <div class="metric-card slds-box slds-text-align_center">
+                            <div class="slds-text-heading_large slds-text-color_error">{dashboardData.criticalEvents24h}</div>
+                            <p class="slds-text-body_small">Critical Events (24h)</p>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <div class="metric-card slds-box slds-text-align_center">
+                            <div class="slds-text-heading_large">{dashboardData.totalAssessments24h}</div>
+                            <p class="slds-text-body_small">Total Assessments (24h)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Critical Events Table -->
+                <h3 class="slds-text-heading_medium slds-m-bottom_small">Recent Critical Events</h3>
+                <template if:true={hasEvents}>
+                    <lightning-datatable
+                        key-field="Id"
+                        data={processedEvents}
+                        columns={columns}
+                        hide-checkbox-column="true">
+                    </lightning-datatable>
+                </template>
+                <template if:false={hasEvents}>
+                    <div class="slds-box slds-theme_shade slds-text-align_center slds-p-around_medium">
+                        <p>No critical events detected in the last 7 days.</p>
+                    </div>
+                </template>
             </template>
         </div>
     </lightning-card>

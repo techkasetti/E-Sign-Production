@@ -59,108 +59,211 @@ public with sharing class SignatureRequestController {
         }
     }
 
-    @AuraEnabled
-    public static String submitSignature(
-        String requestId,
-        String signatureData,
-        String signatureMethod,
-        String userContextJSON
-    ) {
-        System.debug('submitSignature called');
-        System.debug('RequestId: ' + requestId);
-        System.debug('Signature Method: ' + signatureMethod);
-        System.debug('User Context JSON: ' + userContextJSON);
-        try {
-            Signature_Request__c request = [
-                SELECT Id, SignerEmail__c, Fraud_Rules_To_Run__c, Status__c
-                FROM Signature_Request__c
-                WHERE Id = :requestId FOR UPDATE
-            ];
-            System.debug('Fetched Signature Request for Submit: ' + request);
-            if (request.Status__c == 'Signed' || request.Status__c == 'Completed') {
-                System.debug('Signature already completed');
-                throw new AuraHandledException('This document has already been signed.');
-            }
-          // === REPLACE WITH THIS NEW, CORRECTED BLOCK ===
-// === REPLACE WITH THIS NEW, CORRECTED BLOCK ===
-Map<String, Object> contextMap = (Map<String, Object>) JSON.deserializeUntyped(userContextJSON);
-System.debug('Deserialized Context Map: ' + contextMap);
+//     @AuraEnabled
+//     public static String submitSignature(
+//         String requestId,
+//         String signatureData,
+//         String signatureMethod,
+//         String userContextJSON
+//     ) {
+//         System.debug('submitSignature called');
+//         System.debug('RequestId: ' + requestId);
+//         System.debug('Signature Method: ' + signatureMethod);
+//         System.debug('User Context JSON: ' + userContextJSON);
+//         try {
+//             Signature_Request__c request = [
+//                 SELECT Id, SignerEmail__c, Fraud_Rules_To_Run__c, Status__c
+//                 FROM Signature_Request__c
+//                 WHERE Id = :requestId FOR UPDATE
+//             ];
+//             System.debug('Fetched Signature Request for Submit: ' + request);
+//             if (request.Status__c == 'Signed' || request.Status__c == 'Completed') {
+//                 System.debug('Signature already completed');
+//                 throw new AuraHandledException('This document has already been signed.');
+//             }
+//           // === REPLACE WITH THIS NEW, CORRECTED BLOCK ===
+// // === REPLACE WITH THIS NEW, CORRECTED BLOCK ===
+// Map<String, Object> contextMap = (Map<String, Object>) JSON.deserializeUntyped(userContextJSON);
+// System.debug('Deserialized Context Map: ' + contextMap);
 
-// First, get the list of rules that were selected when the request was created.
-String rulesToRun = request.Fraud_Rules_To_Run__c;
-System.debug('Rules to run for this request: ' + rulesToRun);
+// // First, get the list of rules that were selected when the request was created.
+// String rulesToRun = request.Fraud_Rules_To_Run__c;
+// System.debug('Rules to run for this request: ' + rulesToRun);
 
-// --- CONDITIONAL DATA SAVING ---
+// // --- CONDITIONAL DATA SAVING ---
 
-// Block 1: Handle IP Anomaly Data
-// This block ONLY saves the IP address and ONLY runs if the IP_ANOMALY toggle is on.
-if (rulesToRun != null && rulesToRun.contains('IP_ANOMALY')) {
-    String clientIp = (String) contextMap.get('ip');
-    request.IPAddress__c = clientIp;
-    System.debug('IP Anomaly toggle ON. IP Address saved: ' + clientIp);
-} else {
-    System.debug('IP Anomaly toggle OFF. IP Address will not be saved.');
-}
+// // Block 1: Handle IP Anomaly Data
+// // This block ONLY saves the IP address and ONLY runs if the IP_ANOMALY toggle is on.
+// if (rulesToRun != null && rulesToRun.contains('IP_ANOMALY')) {
+//     String clientIp = (String) contextMap.get('ip');
+//     request.IPAddress__c = clientIp;
+//     System.debug('IP Anomaly toggle ON. IP Address saved: ' + clientIp);
+// } else {
+//     System.debug('IP Anomaly toggle OFF. IP Address will not be saved.');
+// }
 
-// Block 2: Handle Location Anomaly Data
-// This block saves location data and ONLY runs if the LOCATION_ANOMALY toggle is on.
-if (rulesToRun != null && rulesToRun.contains('LOCATION_ANOMALY')) {
-    // Part A: Save browser-based location (e.g., from GPS). This is independent.
-    request.SigningLocation__c = (String) contextMap.get('location');
-    System.debug('Location Anomaly toggle ON. Browser location saved: ' + request.SigningLocation__c);
+// // Block 2: Handle Location Anomaly Data
+// // This block saves location data and ONLY runs if the LOCATION_ANOMALY toggle is on.
+// if (rulesToRun != null && rulesToRun.contains('LOCATION_ANOMALY')) {
+//     // Part A: Save browser-based location (e.g., from GPS). This is independent.
+//     request.SigningLocation__c = (String) contextMap.get('location');
+//     System.debug('Location Anomaly toggle ON. Browser location saved: ' + request.SigningLocation__c);
 
-    // Part B: Save IP-based geolocation (country, city). This requires the IP address for the lookup,
-    // but we will NOT save the IP address to the record itself here.
-    String ipForLocationLookup = (String) contextMap.get('ip');
-    if (String.isNotBlank(ipForLocationLookup)) {
-        Map<String, String> geoInfo = getGeoFromIp(ipForLocationLookup);
-        if (geoInfo != null) {
-            request.IP_Country__c = geoInfo.get('country');
-            request.IP_Country_Code__c = geoInfo.get('countryCode');
-            request.IP_Region_Code__c = geoInfo.get('region');
-            request.IP_Region_Name__c = geoInfo.get('regionName');
-            request.IP_City__c = geoInfo.get('city');
-            System.debug('Location Anomaly toggle ON. IP-based geo data (country, city, etc.) saved.');
+//     // Part B: Save IP-based geolocation (country, city). This requires the IP address for the lookup,
+//     // but we will NOT save the IP address to the record itself here.
+//     String ipForLocationLookup = (String) contextMap.get('ip');
+//     if (String.isNotBlank(ipForLocationLookup)) {
+//         Map<String, String> geoInfo = getGeoFromIp(ipForLocationLookup);
+//         if (geoInfo != null) {
+//             request.IP_Country__c = geoInfo.get('country');
+//             request.IP_Country_Code__c = geoInfo.get('countryCode');
+//             request.IP_Region_Code__c = geoInfo.get('region');
+//             request.IP_Region_Name__c = geoInfo.get('regionName');
+//             request.IP_City__c = geoInfo.get('city');
+//             System.debug('Location Anomaly toggle ON. IP-based geo data (country, city, etc.) saved.');
+//         }
+//     }
+// } else {
+//     System.debug('Location Anomaly toggle OFF. Location data will not be saved.');
+// }
+
+// // Block 3: Handle Time Anomaly Data
+// // This block ONLY saves the signing time and ONLY runs if the TIME_ANOMALY toggle is on.
+// if (rulesToRun != null && rulesToRun.contains('TIME_ANOMALY')) {
+//     if (contextMap.containsKey('timeToSign')) {
+//         request.Time_To_Complete_Seconds__c = (Decimal) contextMap.get('timeToSign');
+//         System.debug('Time Anomaly toggle ON. Time to sign saved.');
+//     }
+// } else {
+//     System.debug('Time Anomaly toggle OFF. Time to sign will not be saved.');
+// }
+
+// System.debug('Updated Request Before Fraud Check: ' + request);
+// FraudDetectionRulesEngine.FraudAnalysisResult fraudResult = FraudDetectionRulesEngine.runSelectedChecks(request);
+
+
+//             System.debug('Fraud Result: ' + fraudResult);
+//             if (fraudResult!= null) {
+//                 request.Fraud_Risk_Level__c = fraudResult.riskLevel;
+//                 request.Fraud_Score__c = fraudResult.overallRiskScore;
+//                 request.Fraud_Analysis_Details__c = String.join(fraudResult.reasons, '\n\n');
+//             }
+//             request.Status__c = 'Signed';
+//             request.CompletedDate__c = System.now();
+//             request.SignatureData__c = signatureData;
+//             request.SignatureMethod__c = signatureMethod;
+//             System.debug('Final Request Before Update: ' + request);
+//             update request;
+//             System.debug('Signature Request Successfully Updated');
+//             return 'SUCCESS';
+//         } catch (Exception e) {
+//             System.debug('Error during signature submission: ' + e.getMessage());
+//             throw new AuraHandledException('Signature submission failed: ' + e.getMessage());
+//         }
+//     }
+
+// In SignatureRequestController.cls
+@AuraEnabled
+public static String submitSignature( String requestId, String signatureData, String signatureMethod, String userContextJSON ) {
+    System.debug('submitSignature called');
+    try {
+        Signature_Request__c request = [
+            SELECT Id, SignerEmail__c, Fraud_Rules_To_Run__c, Status__c
+            FROM Signature_Request__c
+            WHERE Id = :requestId FOR UPDATE
+        ];
+
+        if (request.Status__c == 'Signed' || request.Status__c == 'Completed') {
+            throw new AuraHandledException('This document has already been signed.');
         }
-    }
-} else {
-    System.debug('Location Anomaly toggle OFF. Location data will not be saved.');
-}
 
-// Block 3: Handle Time Anomaly Data
-// This block ONLY saves the signing time and ONLY runs if the TIME_ANOMALY toggle is on.
-if (rulesToRun != null && rulesToRun.contains('TIME_ANOMALY')) {
+        Map<String, Object> contextMap = (Map<String, Object>) JSON.deserializeUntyped(userContextJSON);
+        String rulesToRun = request.Fraud_Rules_To_Run__c;
+
+        // --- CONDITIONAL DATA SAVING (Your original code - NO CHANGES HERE) ---
+        if (rulesToRun != null && rulesToRun.contains('IP_ANOMALY')) {
+            String clientIp = (String) contextMap.get('ip');
+            request.IPAddress__c = clientIp;
+        }
+
+        if (rulesToRun != null && rulesToRun.contains('LOCATION_ANOMALY')) {
+            request.SigningLocation__c = (String) contextMap.get('location');
+            String ipForLocationLookup = (String) contextMap.get('ip');
+            if (String.isNotBlank(ipForLocationLookup)) {
+                Map<String, String> geoInfo = getGeoFromIp(ipForLocationLookup);
+                if (geoInfo != null) {
+                    request.IP_Country__c = geoInfo.get('country');
+                    request.IP_Country_Code__c = geoInfo.get('countryCode');
+                    request.IP_Region_Code__c = geoInfo.get('region');
+                    request.IP_Region_Name__c = geoInfo.get('regionName');
+                    request.IP_City__c = geoInfo.get('city');
+                }
+            }
+        }
+
+       if (rulesToRun != null && 
+    (rulesToRun.contains('TIME_ANOMALY') || rulesToRun.contains('BEHAVIORAL_ANOMALY'))) {
     if (contextMap.containsKey('timeToSign')) {
-        request.Time_To_Complete_Seconds__c = (Decimal) contextMap.get('timeToSign');
-        System.debug('Time Anomaly toggle ON. Time to sign saved.');
+        request.Time_To_Complete_Seconds__c = 
+            (Decimal) contextMap.get('timeToSign');
     }
-} else {
-    System.debug('Time Anomaly toggle OFF. Time to sign will not be saved.');
 }
 
-System.debug('Updated Request Before Fraud Check: ' + request);
-FraudDetectionRulesEngine.FraudAnalysisResult fraudResult = FraudDetectionRulesEngine.runSelectedChecks(request);
+        
+        // --- START OF REQUIRED CHANGES ---
 
+        // Set final status fields before the first save
+        request.Status__c = 'Signed';
+        request.CompletedDate__c = System.now();
+        request.SignatureData__c = signatureData;
+        request.SignatureMethod__c = signatureMethod;
 
-            System.debug('Fraud Result: ' + fraudResult);
-            if (fraudResult!= null) {
-                request.Fraud_Risk_Level__c = fraudResult.riskLevel;
-                request.Fraud_Score__c = fraudResult.overallRiskScore;
-                request.Fraud_Analysis_Details__c = String.join(fraudResult.reasons, '\n\n');
-            }
-            request.Status__c = 'Signed';
-            request.CompletedDate__c = System.now();
-            request.SignatureData__c = signatureData;
-            request.SignatureMethod__c = signatureMethod;
-            System.debug('Final Request Before Update: ' + request);
-            update request;
-            System.debug('Signature Request Successfully Updated');
-            return 'SUCCESS';
-        } catch (Exception e) {
-            System.debug('Error during signature submission: ' + e.getMessage());
-            throw new AuraHandledException('Signature submission failed: ' + e.getMessage());
+        // STEP 1: First update. This saves all the raw data (IP, location, signature, etc.).
+        // This is necessary so the fraud engine can query this record for its analysis.
+        update request;
+        System.debug('STEP 1 COMPLETE: Raw data saved for request Id: ' + request.Id);
+
+        // STEP 2: Now that the data is saved, call the advanced engine to analyze it.
+        AdvancedSecurityEngine.SecurityAssessmentResult securityResult;
+        if (String.isNotBlank(rulesToRun)) {
+            // We pass the ID, not the whole object, so the engine can query the fresh data
+            securityResult = AdvancedSecurityEngine.performSecurityAssessment(request.Id);
         }
+
+        // STEP 3: Create a new instance for the second update with only the fraud fields.
+        Signature_Request__c fraudUpdate = new Signature_Request__c(Id = request.Id);
+        
+        if (securityResult != null && securityResult.success) {
+            fraudUpdate.Fraud_Risk_Level__c = securityResult.riskLevel;
+            fraudUpdate.Fraud_Score__c = securityResult.totalRiskScore;
+            
+            List<String> reasons = new List<String>();
+            for (AdvancedSecurityEngine.RiskFactor factor : securityResult.riskFactors) {
+                reasons.add(factor.description);
+            }
+            fraudUpdate.Fraud_Analysis_Details__c = String.join(reasons, '; ');
+            System.debug('STEP 2 COMPLETE: Fraud analysis finished. Risk Level: ' + securityResult.riskLevel);
+        } else {
+            // Set default values if no rules were run or if the engine failed
+            fraudUpdate.Fraud_Risk_Level__c = 'Not Analyzed';
+            fraudUpdate.Fraud_Analysis_Details__c = 'No fraud rules were selected to run.';
+        }
+
+        // STEP 4: Second update. This saves only the fraud analysis results onto the record.
+        update fraudUpdate;
+        System.debug('STEP 3 COMPLETE: Signature Request updated with fraud analysis.');
+
+        // --- END OF REQUIRED CHANGES ---
+
+        return 'SUCCESS';
+
+    } catch (Exception e) {
+        System.debug('Error during signature submission: ' + e.getMessage());
+        throw new AuraHandledException('Signature submission failed: ' + e.getMessage());
     }
+}
+
+
 
     // Fetch document and signature request data
     @AuraEnabled(cacheable=true)

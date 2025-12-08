@@ -1,5 +1,55 @@
 // force-app/main/default/classes/DocumentLifecycleDeploymentManager.cls
 public with sharing class DocumentLifecycleDeploymentManager {
+
+
+    // In: DocumentLifecycleDeploymentManager.cls
+
+// Add this entire wrapper class inside your DocumentLifecycleDeploymentManager file
+public class DocumentDetailsWrapper {
+    @AuraEnabled
+    public DocumentLifecycleConfiguration__c document;
+    @AuraEnabled
+    public List<Signature_Request__c> signatureRequests;
+
+    public DocumentDetailsWrapper() {
+        signatureRequests = new List<Signature_Request__c>();
+    }
+}
+
+// Add this new method to the class
+@AuraEnabled(cacheable=true)
+public static DocumentDetailsWrapper getDocumentDetails(String documentId) {
+    if (String.isBlank(documentId)) {
+        throw new AuraHandledException('Document ID cannot be null.');
+    }
+
+    DocumentDetailsWrapper result = new DocumentDetailsWrapper();
+
+    try {
+        // Query for the main document record
+        result.document = [
+            SELECT Id, DocumentTitle__c, CreatedDate, ProcessingStatus__c, 
+                   ComplianceStatus__c, GeneratedClause__c 
+            FROM DocumentLifecycleConfiguration__c 
+            WHERE Id = :documentId 
+            LIMIT 1
+        ];
+
+        // Query for all related signature requests
+        result.signatureRequests = [
+            SELECT Id, SignerName__c, SignerEmail__c, Status__c, CompletedDate__c
+            FROM Signature_Request__c
+            WHERE DocumentId__c = :documentId
+            ORDER BY CreatedDate DESC
+        ];
+
+        return result;
+
+    } catch (Exception e) {
+        throw new AuraHandledException('Error fetching document details: ' + e.getMessage());
+    }
+}
+
     
     @AuraEnabled(cacheable=false)
     public static String generateDocument(String region, String role, String contractType, String documentTitle) {
