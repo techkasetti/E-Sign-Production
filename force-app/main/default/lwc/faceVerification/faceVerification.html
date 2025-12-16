@@ -1,0 +1,25 @@
+<template>
+    <lightning-card title="Facial Verification" icon-name="utility:user">
+        <div class="slds-p-around_medium">
+            <template if:false={isCameraInitialized}>
+                <lightning-button label="Start Camera" variant="brand" onclick={initializeCamera}></lightning-button>
+            </template>
+            <template if:true={isCameraInitialized}>
+                <!-- Video stream from camera -->
+                <video data-id="video" playsinline autoplay class="slds-align_absolute-center"></video>
+                <!-- Action button -->
+                <div class="slds-m-top_medium slds-text-align_center">
+<lightning-button
+    label="Verify Face"
+    variant="brand"
+    onclick={captureAndVerify}
+    disabled={isVerifyDisabled}>
+</lightning-button>
+
+                </div>
+            </template>
+            <!-- Hidden canvas for capturing the image -->
+            <canvas data-id="canvas" class="slds-hide"></canvas>
+        </div>
+    </lightning-card>
+</template> 

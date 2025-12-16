@@ -21,6 +21,11 @@ export default class SignaturePad extends LightningElement {
     @track startTime;
     @track userCoordinates = null;
 
+    
+    // for face recogniztion 
+
+    @track isFaceVerified = false;
+
     connectedCallback() {
         this.startTime = new Date();
 
@@ -250,12 +255,33 @@ export default class SignaturePad extends LightningElement {
             y: clientY - rect.top
         };
     }
+ 
 
     handleClearCanvas() {
         const canvas = this.template.querySelector('canvas');
         this.canvasContext.clearRect(0, 0, canvas.width, canvas.height);
         this.drawnSignatureData = '';
     }
+
+
+
+
+    // for face recogniztion 
+
+ 
+   handleVerificationSuccess(event) {
+    console.log('Face verification event received:', event.detail);
+
+    if (event.detail?.faceVerified === true) {
+        this.isFaceVerified = true;
+
+        // 🔥 FORCE LWC RE-RENDER
+        this.isLoading = true;
+        setTimeout(() => {
+            this.isLoading = false;
+        }, 0);
+    }
+}
 
     showToast(title, message, variant) {
         this.dispatchEvent(
@@ -266,4 +292,4 @@ export default class SignaturePad extends LightningElement {
             })
         );
     }
-}
+    }

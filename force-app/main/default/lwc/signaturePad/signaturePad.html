@@ -13,12 +13,26 @@
                 </div>
             </template>
 
+            
             <!-- Main Content: Shown when NOT loading and signature is NOT complete -->
             <template if:false={isLoading}>
 
-                <template if:false={isSignatureComplete}>
 
-                    <!-- THIS IS THE CRITICAL FIX: Only render if signatureRequest is loaded -->
+                 <template if:false={isFaceVerified}>
+                    <div class="verification-container slds-p-around_medium">
+                        <h3 class="slds-text-heading_medium slds-m-bottom_medium">Step 1: Identity Verification</h3>
+                        <p class="slds-m-bottom_medium">Before you can sign, please complete the facial verification step below.</p>
+                        
+                        <!-- The face verification component is placed here -->
+                        <c-face-verification onverificationcomplete={handleVerificationSuccess}></c-face-verification>
+                    </div>
+                </template>
+
+                <template if:false={isSignatureComplete}>
+                   
+                
+            
+                      <template if:true={isFaceVerified}>
                     <template if:true={signatureRequest}>
 
                         <!-- 1. Document Information -->
@@ -140,6 +154,7 @@
 
                     </template>
                 </template>
+            </template>
 
                 <!-- Signature Complete State -->
                 <template if:true={isSignatureComplete}>
