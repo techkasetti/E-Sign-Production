@@ -1,47 +1,122 @@
-.analysis-section {
-    background-color: #f3f4f6;
-    border-radius: .25rem;
+/* ================================
+   DOCUMENT VIEWER – PROFESSIONAL UI
+   ================================ */
+
+/* Card body spacing */
+.slds-card__body_inner {
+    padding: 1.5rem;
 }
 
-.result-item .result-label {
-    font-size: 0.8rem;
-    color: #555;
-    text-transform: uppercase;
+/* Document content container */
+.document-content-display {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Headings consistency */
+h3.slds-text-heading_small {
+    font-weight: 600;
+    color: #1f2933;
+}
+
+/* Action buttons area */
+.slds-button-group {
+    gap: 0.5rem;
+}
+
+/* AI Analysis Card */
+.analysis-section {
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+/* Analysis result blocks */
+.result-item {
+    background: #ffffff;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+    border-left: 4px solid #0176d3;
+}
+
+/* Labels inside analysis */
+.result-label {
+    color: #374151;
+    font-size: 0.85rem;
     margin-bottom: 0.25rem;
 }
-/* Align the action buttons properly in the card header */
-.slds-card__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
 
-/* Ensure actions are aligned to the right */
-[slot="actions"] {
-    margin-left: auto !important;
-}
-
-/* Style for dropdown menu to avoid sticking to the corner */
-lightning-button-menu {
-    margin-right: 10px;
-}
-
-/* Optional: Improve spacing of entire action block */
-.slds-m-around_medium {
-    margin-right: 1rem;
-}
-
-/* Fix modal alignment if needed */
+/* Signature modal polish */
 .slds-modal__container {
-    max-width: 60rem !important;
-}
-/* Fix alignment of lightning-button-menu inside card header */
-.slds-card__header .slds-button_icon-border-filled,
-.slds-card__header .slds-button-menu {
-    margin-right: 0.5rem !important;
+    border-radius: 0.75rem;
 }
 
-/* Ensure menu opens directly below the button */
-.slds-dropdown {
-    right: auto !important;
+/* Modal header */
+.slds-modal__header {
+    background: linear-gradient(90deg, #0176d3, #005fb2);
+    color: #ffffff;
+}
+
+.slds-modal__header h2 {
+    color: #ffffff;
+}
+
+/* Modal body */
+.slds-modal__content {
+    background: #f8fafc;
+}
+
+/* Fraud detection box */
+.slds-box {
+    background: #ffffff;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+/* Toggle spacing */
+lightning-input[type="toggle"] {
+    margin-bottom: 0.75rem;
+}
+
+/* Footer buttons */
+.slds-modal__footer {
+    background: #f1f5f9;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Spinner alignment */
+.slds-text-align_center {
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Audit modal table */
+lightning-datatable {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .slds-card__body_inner {
+        padding: 1rem;
+    }
+
+    .slds-modal__container {
+        width: 95%;
+        margin: auto;
+    }
+}
+.action-btn lightning-button button {
+    height: 50px;           /* Bigger button */
+    font-size: 60px;      /* Professional text size */
+    padding: 0 1.25rem;     /* Horizontal space */
+}
+.audit-table-container {
+    height: 420px;
+    overflow-y: auto;
 }

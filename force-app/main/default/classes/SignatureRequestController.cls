@@ -1,21 +1,25 @@
 public with sharing class SignatureRequestController {
     // Fetches a single signature request for the signaturePad component
     @AuraEnabled(cacheable=true)
-    public static Signature_Request__c getSignatureRequest(String requestId) {
-        System.debug('getSignatureRequest called with requestId: ' + requestId);
-        try {
-            Signature_Request__c req = [
-                SELECT Id, Status__c, SignerName__c, DocumentId__r.DocumentTitle__c, DocumentId__r.GeneratedClause__c
-                FROM Signature_Request__c
-                WHERE Id = :requestId
-            ];
-            System.debug('Fetched Signature Request: ' + req);
-            return req;
-        } catch (Exception e) {
-            System.debug('Error fetching Signature Request: ' + e.getMessage());
-            throw new AuraHandledException('Error fetching signature request.');
-        }
-    }
+public static Signature_Request__c getSignatureRequest(String requestId) {
+    return [
+        SELECT Id, Status__c, SignerName__c,
+               DocumentId__r.DocumentTitle__c,
+               DocumentId__r.GeneratedClause__c
+        FROM Signature_Request__c
+        WHERE Id = :requestId
+    ];
+}
+@AuraEnabled
+public static void logSignatureViewed(Id requestId) {
+    AuditTrailManager.logSignatureActivity(
+        requestId,
+        'Signature Viewed',
+        'SUCCESS',
+        'Signer opened the document'
+    );
+}
+
 
     // Creates a new signature request and stores the selected fraud rules
     @AuraEnabled
@@ -45,6 +49,15 @@ public with sharing class SignatureRequestController {
                 Fraud_Rules_To_Run__c = String.join(activeToggles, ';')
             );
             insert newRequest;
+            EmailNotificationService.sendSignatureRequest(newRequest.Id);
+
+
+            AuditTrailManager.logDocumentActivity(
+    documentId,
+    'Signature Requested',
+    'Signature request sent to ' + signerEmail
+);
+
 
             // --- DEBUGGER ADDITION ---
             // STEP 2: VERIFY WHAT WAS SAVED TO THE DATABASE FIELD
@@ -251,6 +264,9 @@ public static String submitSignature( String requestId, String signatureData, St
 
         // STEP 4: Second update. This saves only the fraud analysis results onto the record.
         update fraudUpdate;
+
+        AuditTrailManager.logSignatureCompletion(request.Id, signatureMethod);
+
         System.debug('STEP 3 COMPLETE: Signature Request updated with fraud analysis.');
 
         // --- END OF REQUIRED CHANGES ---

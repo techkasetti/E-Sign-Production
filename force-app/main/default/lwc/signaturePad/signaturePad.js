@@ -2,6 +2,9 @@ import { LightningElement, api, track, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getSignatureRequest from '@salesforce/apex/SignatureRequestController.getSignatureRequest';
 import submitSignature from '@salesforce/apex/SignatureRequestController.submitSignature';
+import logSignatureViewed from 
+'@salesforce/apex/SignatureRequestController.logSignatureViewed';
+
 
 export default class SignaturePad extends LightningElement {
 
@@ -43,6 +46,10 @@ export default class SignaturePad extends LightningElement {
             console.log('Geolocation is not supported by this browser.');
         }
     }
+    connectedCallback() {
+    logSignatureViewed({ requestId: this.recordId });
+}
+
 
     @wire(getSignatureRequest, { requestId: '$recordId' })
     wiredRequest({ error, data }) {

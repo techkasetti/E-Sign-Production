@@ -1,0 +1,124 @@
+<template>
+    <lightning-card title="Unified E-Signature Dashboard" icon-name="standard:dashboard">
+        <lightning-button slot="actions" label="Refresh" onclick={refreshAllData} disabled={isLoading}></lightning-button>
+
+        <div class="slds-card__body slds-card__body_inner">
+            <template if:true={isLoading}>
+                <div class="loading-container">
+                    <lightning-spinner alternative-text="Loading..." size="large"></lightning-spinner>
+                </div>
+            </template>
+            <template if:true={error}>
+                <div class="slds-box slds-theme_error">
+                    <p>An error occurred while loading the dashboard:</p>
+                    <p>{errorText}</p>
+                </div>
+            </template>
+
+            <template if:false={isLoading}>
+                <lightning-tabset variant="scoped">
+                    <!-- ======================================================= -->
+                    <!-- TAB 1: SYSTEM & PERFORMANCE HEALTH -->
+                    <!-- ======================================================= -->
+                    <lightning-tab label="System Health" icon-name="standard:service_report">
+                        <div class="slds-p-around_medium">
+                            <!-- Overall Health -->
+                            <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_large">
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <div class={overallHealthClass}>
+                                        <lightning-icon icon-name={overallHealthIcon} size="large" variant="inverse" class="slds-m-bottom_small"></lightning-icon>
+                                        <span class="health-status-text">{overallHealthStatus}</span>
+                                        <span class="health-score">Health Score: {overallHealthScore}%</span>
+                                    </div>
+                                </div>
+                                <!-- Key Metrics -->
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-3">
+                                    <div class="slds-grid slds-wrap metrics-grid">
+                                        <div class="slds-col slds-size_1-of-2 slds-p-bottom_small"><div class="mini-metric"><lightning-icon icon-name="utility:up" size="small"></lightning-icon><span class="metric-title">Uptime</span><span class="metric-value">{systemUptime}%</span></div></div>
+                                        <div class="slds-col slds-size_1-of-2 slds-p-bottom_small"><div class="mini-metric"><lightning-icon icon-name="utility:timer" size="small"></lightning-icon><span class="metric-title">Avg Response</span><span class="metric-value">{avgResponseTime}ms</span></div></div>
+                                        <div class="slds-col slds-size_1-of-2"><div class="mini-metric"><lightning-icon icon-name="utility:user" size="small"></lightning-icon><span class="metric-title">Active Sessions</span><span class="metric-value">{activeSessions}</span></div></div>
+                                        <div class="slds-col slds-size_1-of-2"><div class="mini-metric"><lightning-icon icon-name="utility:error" size="small"></lightning-icon><span class="metric-title">Error Rate</span><span class="metric-value">{errorRate}%</span></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Charts -->
+                            <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_large">
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-card title="Response Time Trends (24h)">
+                                        <div class="chart-container"><canvas data-id="responseChart"></canvas></div>
+                                    </lightning-card>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-card title="System Load (24h)">
+                                        <div class="chart-container"><canvas data-id="loadChart"></canvas></div>
+                                    </lightning-card>
+                                </div>
+                            </div>
+                            <!-- Component Status Table -->
+                            <lightning-card title="Component Status">
+                                <lightning-datatable key-field="id" data={performanceMetrics} columns={metricsColumns} hide-checkbox-column> </lightning-datatable>
+                            </lightning-card>
+                        </div>
+                    </lightning-tab>
+
+                    <!-- ======================================================= -->
+                    <!-- TAB 2: BUSINESS & ACTIVITY ANALYTICS -->
+                    <!-- ======================================================= -->
+                    <lightning-tab label="Business Analytics" icon-name="standard:chart">
+                        <div class="slds-p-around_medium">
+                            <h2 class="section-header">Today's Signature Funnel</h2>
+                            <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_large">
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2"><div class="kpi-card"><div class="kpi-value">{businessAnalytics.requestsSent}</div><div class="kpi-label">Requests Sent</div></div></div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2"><div class="kpi-card kpi-success"><div class="kpi-value">{businessAnalytics.signaturesCompletedToday}</div><div class="kpi-label">Signatures Completed</div></div></div>
+                            </div>
+
+                            <h2 class="section-header">Key Performance Indicators</h2>
+                            <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_large">
+                                <!-- Completion Rate Card -->
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <div class="kpi-card">
+                                        <div class="kpi-value">{businessAnalytics.completionRate}%</div>
+                                        <div class="kpi-label">Completion Rate (Today)</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Signature Methods Card -->
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <div class="kpi-card">
+                                        <div class="kpi-label" style="margin-bottom: 0.5rem;">Signature Methods Used (Today)</div>
+                                        <div class="slds-text-body_small">
+                                            <p>Typed: <strong>{signatureMethods.Typed}</strong></p>
+                                            <p>Drawn: <strong>{signatureMethods.Drawn}</strong></p>
+                                            <p>Uploaded: <strong>{signatureMethods.Uploaded}</strong></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <lightning-card title="Recent Activity Feed">
+                                <template if:true={hasRecentActivity}>
+                                    <div class="slds-scrollable_y" style="max-height: 300px;">
+                                        <template for:each={businessAnalytics.recentActivity} for:item="activity">
+                                            <div key={activity.timestamp} class="activity-item">
+                                                <lightning-icon icon-name="utility:user" size="small"></lightning-icon>
+                                                <div class="activity-content">
+                                                    <p class="slds-text-body_regular">{activity.message}</p>
+                                                    <p class="slds-text-color_weak slds-text-body_x-small"><lightning-formatted-date-time value={activity.timestamp} year="numeric" month="short" day="2-digit" hour="2-digit" minute="2-digit"></lightning-formatted-date-time></p>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template if:false={hasRecentActivity}>
+                                    <div class="empty-state">
+                                        <p>No recent activity to display.</p>
+                                    </div>
+                                </template>
+                            </lightning-card>
+                        </div>
+                    </lightning-tab>
+                </lightning-tabset>
+            </template>
+        </div>
+    </lightning-card>
+</template>

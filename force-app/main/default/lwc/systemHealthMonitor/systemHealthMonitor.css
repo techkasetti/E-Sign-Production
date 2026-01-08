@@ -1,0 +1,122 @@
+/* Overall Layout */
+.section-header {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+.loading-container {
+    position: relative;
+    height: 300px;
+}
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #5c5c5c;
+}
+
+/* System Health Tab */
+.health-card {
+    padding: 1.5rem;
+    border-radius: .25rem;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.health-healthy {
+    background: #04844b;
+}
+.health-warning {
+    background: #ffb75d;
+}
+.health-critical {
+    background: #ea001e;
+}
+.health-status-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.health-score {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+.mini-metric {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f3f3f3;
+    border-radius: .25rem;
+}
+.metric-title {
+    margin-left: 0.5rem;
+    font-weight: bold;
+    color: #3e3e3c;
+}
+.metric-value {
+    margin-left: auto;
+    font-size: 1.25rem;
+    font-weight: 300;
+}
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+.slds-text-color_success {
+    color: #04844b;
+}
+.slds-text-color_warning {
+    color: #dd7a01;
+}
+.slds-text-color_error {
+    color: #ea001e;
+}
+
+/* Business Analytics & Security Tabs */
+.kpi-card {
+    background: #f3f3f3;
+    border-radius: .25rem;
+    text-align: center;
+    padding: 1rem;
+    height: 100%;
+}
+.kpi-success {
+    background: #d4f3e8;
+}
+.kpi-warning {
+    background: #fff4d4;
+}
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1.2;
+}
+.kpi-label {
+    font-size: 0.875rem;
+    color: #5c5c5c;
+}
+
+/* Activity & Alert Feeds */
+.activity-item, .alert-item {
+    display: flex;
+    padding: 1rem;
+    border-bottom: 1px solid #dddbda;
+}
+.activity-item:last-child, .alert-item:last-child {
+    border-bottom: none;
+}
+.activity-content, .alert-content {
+    margin-left: 1rem;
+}
+.alert-critical {
+    background-color: #feefef;
+    border-left: 3px solid #ea001e;
+}
+.alert-warning {
+    background-color: #fff4d4;
+    border-left: 3px solid #ffb75d;
+}
+.alert-info {
+    background-color: #f3f9ff;
+    border-left: 3px solid #0070d2;
+}

@@ -1,159 +1,132 @@
-// documentViewer.js
-
 import { LightningElement, api, track, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getDocumentData from '@salesforce/apex/SignatureRequestController.getDocumentData';
-import analyzeDocumentById from '@salesforce/apex/DocumentAnalysisService.analyzeDocumentById';
 import initiateSignatureRequest from '@salesforce/apex/SignatureRequestController.initiateSignatureRequest';
 import getAuditTrail from '@salesforce/apex/AuditTrailManager.getAuditTrail';
+import getPdfDownloadUrl from '@salesforce/apex/AuditTrailManager.getPdfDownloadUrl';
+
+
 
 export default class DocumentViewer extends LightningElement {
     @api recordId;
     @track documentData;
     @track isLoading = true;
-
-    // AI analysis state
     @track isAnalyzing = false;
-    @track analysisResult = null;
-
-    // Signature modal state
+    @track analysisResult;
     @track showSignatureModal = false;
     @track signerEmail = '';
     @track signerName = '';
     @track isSendingRequest = false;
-    
-    // --- NEW: State for Fraud Toggles ---
     @track activeToggles = [];
-
-    // Audit trail state
     @track showAuditModal = false;
     @track auditTrailData;
     @track isAuditLoading = false;
 
     @wire(getDocumentData, { documentId: '$recordId' })
-    wiredDocument({ error, data }) {
-        this.isLoading = true;
+    wiredDoc({ data, error }) {
         if (data) {
             this.documentData = data.document;
-            this.isLoading = false;
         } else if (error) {
-            this.showToast('Error', 'Failed to load document details.', 'error');
-            this.isLoading = false;
+            this.showToast('Error', 'Failed to load document', 'error');
         }
+        this.isLoading = false;
     }
-
 
     handleMenuSelect(event) {
-        const selectedItemValue = event.detail.value;
-        switch (selectedItemValue) {
-            case 'requestSignature':
-                this.showSignatureModal = true;
-                break;
-            case 'downloadPDF':
-                this.handleDownloadPdf();
-                break;
-            case 'auditTrail':
-                this.handleViewAuditTrail();
-                break;
-            default:
-                break;
+        const val = event.detail.value;
+        if (val === 'requestSignature') this.showSignatureModal = true;
+        if (val === 'downloadPDF') this.handleDownloadPdf();
+        if (val === 'auditTrail') this.handleViewAuditTrail();
+    }
+
+    handleToggleChange(event) {
+        const name = event.target.name;
+        if (event.target.checked && !this.activeToggles.includes(name)) {
+            this.activeToggles.push(name);
+        } else {
+            this.activeToggles = this.activeToggles.filter(t => t !== name);
         }
     }
 
-    // --- SIGNATURE MODAL LOGIC ---
+    handleSignerEmailChange(e) { this.signerEmail = e.detail.value; }
+    handleSignerNameChange(e) { this.signerName = e.detail.value; }
+
+    async handleSendSignatureRequest() {
+        await initiateSignatureRequest({
+            documentId: this.recordId,
+            signerEmail: this.signerEmail,
+            signerName: this.signerName,
+            activeToggles: this.activeToggles
+        });
+        this.showToast('Success', 'Signature request sent', 'success');
+        this.handleCloseSignatureModal();
+    }
+
+ async handleViewAuditTrail() {
+    if (this.auditTrailData) {
+        this.showAuditModal = true;
+        return;
+    }
+
+    this.showAuditModal = true;
+    this.isAuditLoading = true;
+
+    try {
+        this.auditTrailData = await getAuditTrail({ limitCount: 500 });
+    } catch (e) {
+        this.showToast('Error', 'Failed to load audit trail', 'error');
+    } finally {
+        this.isAuditLoading = false;
+    }
+}
+
     handleCloseSignatureModal() {
         this.showSignatureModal = false;
         this.signerEmail = '';
         this.signerName = '';
-        this.activeToggles = []; // Reset toggles on close
-        this.isSendingRequest = false;
+        this.activeToggles = [];
     }
-    
-    // --- REPLACE WITH THIS NEW FUNCTION ---
-handleToggleChange(event) {
-    const toggleName = event.target.name;   // e.g., 'IP_ANOMALY'
-    const isChecked = event.target.checked; // true or false
+handleRequestSignature() {
+    this.handleMenuSelect({ detail: { value: 'requestSignature' } });
+}
 
-    // Add the rule to our list if the toggle is on
-    if (isChecked) {
-        // Add to the array only if it's not already there
-        if (!this.activeToggles.includes(toggleName)) {
-            this.activeToggles.push(toggleName);
-        }
-    } 
-    // Remove the rule from our list if the toggle is off
-    else {
-        this.activeToggles = this.activeToggles.filter(rule => rule !== toggleName);
+async handleDownloadPDF() {
+    try {
+        const url = await getPdfDownloadUrl({ documentId: this.recordId });
+
+        // Open PDF in new tab (professional behavior)
+        window.open(url, '_blank');
+    } catch (error) {
+        this.showToast(
+            'Error',
+            'Unable to download PDF',
+            'error'
+        );
     }
 }
 
-    handleSignerEmailChange(event) {
-        this.signerEmail = event.detail.value;
-    }
-    handleSignerNameChange(event) {
-        this.signerName = event.detail.value;
-    }
-
-    async handleSendSignatureRequest() {
-        if (!this.signerEmail ||  !this.signerName) {
-            this.showToast('Error', 'Please provide both signer email and name.', 'error');
-            return;
-        }
-        this.isSendingRequest = true;
-        try {
-            // --- MODIFIED: Pass the activeToggles to Apex ---
-            await initiateSignatureRequest({
-                documentId: this.recordId,
-                signerEmail: this.signerEmail,
-                signerName: this.signerName,
-                activeToggles: this.activeToggles // Pass the array of selected toggle values
-            });
-            this.showToast('Success', 'Signature request sent successfully!', 'success');
-            this.handleCloseSignatureModal();
-        } catch (error) {
-            const msg = (error?.body?.message) ? error.body.message : error.message;
-            this.showToast('Error', 'Failed to send signature request: ' + msg, 'error');
-        } finally {
-            this.isSendingRequest = false;
-        }
-    }
-    
-    // --- OTHER METHODS (unchanged) ---
-    // (handleAnalyzeDocument, handleDownloadPdf, handleViewAuditTrail, auditColumns, etc.)
-    showToast(title, message, variant) {
-        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
-    }
-    
-    // ... Paste your other unchanged methods here ...
-    get isSendDisabled() {
-        return !this.signerEmail || !this.signerName || this.isSendingRequest;
-    }
-    
-    async handleViewAuditTrail() {
-        this.showAuditModal = true;
-        this.isAuditLoading = true;
-        this.auditTrailData = null;
-        try {
-            const data = await getAuditTrail({ recordId: this.recordId, limitCount: 50 });
-            this.auditTrailData = data.map(item => ({...item, UserName: item.User__r ? item.User__r.Name : 'System'}));
-        } catch (error) {
-            this.showToast('Error', 'Failed to load audit trail.', 'error');
-        } finally {
-            this.isAuditLoading = false;
-        }
-    }
+handleAuditTrail() {
+    this.handleMenuSelect({ detail: { value: 'auditTrail' } });
+}
 
     handleCloseAuditModal() {
         this.showAuditModal = false;
     }
 
+    get isSendDisabled() {
+        return !this.signerEmail || !this.signerName || this.isSendingRequest;
+    }
+
+    showToast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+    }
+
     get auditColumns() {
         return [
-            { label: 'Action', fieldName: 'Action__c', wrapText: true },
-            { label: 'Details', fieldName: 'Details__c', wrapText: true },
-            { label: 'User', fieldName: 'UserName', type: 'text' },
-            { label: 'Timestamp', fieldName: 'Timestamp__c', type: 'date', typeAttributes: { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }}
+            { label: 'Action', fieldName: 'Action__c' },
+            { label: 'Details', fieldName: 'Details__c' },
+            { label: 'User', fieldName: 'UserName' },
+            { label: 'Timestamp', fieldName: 'Timestamp__c', type: 'date' }
         ];
     }
 }
-
