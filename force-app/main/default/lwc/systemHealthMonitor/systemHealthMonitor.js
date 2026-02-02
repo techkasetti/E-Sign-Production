@@ -175,15 +175,17 @@ export default class SystemHealthMonitor extends LightningElement {
     // ===============================
     // == GETTERS — BUSINESS ANALYTICS
     // ===============================
-    get signatureMethods() {
-        const methods = this.businessAnalytics?.signatureMethodsUsed || {};
-        // ** THIS FIX IS ALSO INCLUDED TO ENSURE IT WORKS **
-        return {
-            Typed: methods.Typed | 0,
-            Drawn: methods.Drawn || 0,
-            Uploaded: methods.Uploaded || 0
-        };
-    }
+    // FINAL CORRECTED GETTER
+get signatureMethods() {
+    const methods = this.businessAnalytics?.signatureMethodsUsed | {};
+    return {
+        Typed: methods.Type | 0,       // Corrected: "Type"
+        Drawn: methods.Draw || 0,       // Corrected: "Draw"
+        Uploaded: methods.Upload || 0, // Corrected: "Upload"
+        Other: methods.Other || 0        // Added: "Other"
+    };
+}
+
     get hasRecentActivity() { return (this.businessAnalytics?.recentActivity?.length > 0); }
 
     // ===============================

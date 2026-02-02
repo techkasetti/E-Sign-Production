@@ -29,25 +29,28 @@ export default class SignaturePad extends LightningElement {
 
     @track isFaceVerified = false;
 
-    connectedCallback() {
-        this.startTime = new Date();
+   connectedCallback() {
+    // Start timer
+    this.startTime = new Date();
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    this.userCoordinates = `${position.coords.latitude},${position.coords.longitude}`;
-                    console.log('Geolocation captured:', this.userCoordinates);
-                },
-                (error) => {
-                    console.error('Geolocation Error:', error.message);
-                }
-            );
-        } else {
-            console.log('Geolocation is not supported by this browser.');
-        }
-    }
-    connectedCallback() {
+    // Log signature view
     logSignatureViewed({ requestId: this.recordId });
+
+    // Capture EXACT GPS location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                this.userCoordinates =
+                    `${position.coords.latitude},${position.coords.longitude}`;
+                console.log('✅ Exact Geolocation captured:', this.userCoordinates);
+            },
+            (error) => {
+                console.error('❌ Geolocation Error:', error.message);
+            }
+        );
+    } else {
+        console.log('Geolocation not supported');
+    }
 }
 
 

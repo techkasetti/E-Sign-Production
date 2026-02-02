@@ -18,7 +18,7 @@ export default class FaceVerification extends LightningElement {
     isVideoPlaying = false;
 
     // 🔴 TEMP: hard-coded registered face token (PASTE REAL TOKEN)
-REGISTERED_FACE_TOKEN = '8b81391355a3d8085e80f9d438fc37c2';
+REGISTERED_FACE_TOKEN = '51f8ecf4b66ec654b8b99447794745e7';
 
     initializeCamera() {
         navigator.mediaDevices.getUserMedia({ video: true })

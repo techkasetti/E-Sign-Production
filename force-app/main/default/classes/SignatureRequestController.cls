@@ -4,8 +4,7 @@ public with sharing class SignatureRequestController {
 public static Signature_Request__c getSignatureRequest(String requestId) {
     return [
         SELECT Id, Status__c, SignerName__c,
-               DocumentId__r.DocumentTitle__c,
-               DocumentId__r.GeneratedClause__c
+               DocumentId__r.DocumentTitle__c
         FROM Signature_Request__c
         WHERE Id = :requestId
     ];
@@ -46,6 +45,7 @@ public static void logSignatureViewed(Id requestId) {
                 SignerEmail__c = signerEmail,
                 SignerName__c = signerName,
                 Status__c = 'Pending',
+                 CreatedDate__c = DateTime.now(),
                 Fraud_Rules_To_Run__c = String.join(activeToggles, ';')
             );
             insert newRequest;
@@ -181,7 +181,7 @@ public static String submitSignature( String requestId, String signatureData, St
     System.debug('submitSignature called');
     try {
         Signature_Request__c request = [
-            SELECT Id, SignerEmail__c, Fraud_Rules_To_Run__c, Status__c
+            SELECT Id, SignerEmail__c,CreatedDate__c,Fraud_Rules_To_Run__c, Status__c
             FROM Signature_Request__c
             WHERE Id = :requestId FOR UPDATE
         ];
@@ -213,21 +213,23 @@ public static String submitSignature( String requestId, String signatureData, St
                 }
             }
         }
-
-       if (rulesToRun != null && 
-    (rulesToRun.contains('TIME_ANOMALY') || rulesToRun.contains('BEHAVIORAL_ANOMALY'))) {
+// Save signing duration ONLY for BEHAVIORAL_ANOMALY
+if (rulesToRun != null && rulesToRun.contains('BEHAVIORAL_ANOMALY')) {
     if (contextMap.containsKey('timeToSign')) {
-        request.Time_To_Complete_Seconds__c = 
+        request.Time_To_Complete_Seconds__c =
             (Decimal) contextMap.get('timeToSign');
     }
 }
+
+
+
 
         
         // --- START OF REQUIRED CHANGES ---
 
         // Set final status fields before the first save
         request.Status__c = 'Signed';
-        request.CompletedDate__c = System.now();
+        request.CompletedDate__c = DateTime.now();
         request.SignatureData__c = signatureData;
         request.SignatureMethod__c = signatureMethod;
 
@@ -238,10 +240,13 @@ public static String submitSignature( String requestId, String signatureData, St
 
         // STEP 2: Now that the data is saved, call the advanced engine to analyze it.
         AdvancedSecurityEngine.SecurityAssessmentResult securityResult;
-        if (String.isNotBlank(rulesToRun)) {
-            // We pass the ID, not the whole object, so the engine can query the fresh data
-            securityResult = AdvancedSecurityEngine.performSecurityAssessment(request.Id);
-        }
+       // Default to BEHAVIORAL_ANOMALY if nothing selected
+if (String.isBlank(rulesToRun)) {
+    rulesToRun = 'BEHAVIORAL_ANOMALY';
+}
+
+securityResult = AdvancedSecurityEngine.performSecurityAssessment(request.Id);
+
 
         // STEP 3: Create a new instance for the second update with only the fraud fields.
         Signature_Request__c fraudUpdate = new Signature_Request__c(Id = request.Id);
@@ -268,6 +273,7 @@ public static String submitSignature( String requestId, String signatureData, St
         AuditTrailManager.logSignatureCompletion(request.Id, signatureMethod);
 
         System.debug('STEP 3 COMPLETE: Signature Request updated with fraud analysis.');
+        
 
         // --- END OF REQUIRED CHANGES ---
 
@@ -288,16 +294,16 @@ public static String submitSignature( String requestId, String signatureData, St
         try {
             DocumentData data = new DocumentData();
             data.document = [
-                SELECT Id, DocumentTitle__c, GeneratedClause__c, Region__c, Role__c, ContractType__c, ComplianceStatus__c, CreatedDate
+                SELECT Id, DocumentTitle__c, GeneratedClause__c, Region__c, Role__c, ContractType__c, ComplianceStatus__c, CreatedDate__c
                 FROM DocumentLifecycleConfiguration__c
                 WHERE Id = :documentId LIMIT 1
             ];
             System.debug('Fetched Document: ' + data.document);
             data.signatureRequests = [
-                SELECT Id, SignerName__c, SignerEmail__c, Status__c, CreatedDate, CompletedDate__c
+                SELECT Id, SignerName__c, SignerEmail__c, Status__c, CreatedDate__c, CompletedDate__c
                 FROM Signature_Request__c
                 WHERE DocumentId__c = :documentId
-                ORDER BY CreatedDate DESC
+                ORDER BY CreatedDate__c DESC
             ];
             System.debug('Fetched Signature Requests: ' + data.signatureRequests);
             return data;

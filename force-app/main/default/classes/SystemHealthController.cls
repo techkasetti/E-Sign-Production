@@ -139,31 +139,75 @@ public with sharing class SystemHealthController {
     // =================================================================================
     // == SECTION 2: BUSINESS ANALYTICS HELPERS
     // =================================================================================
-    private static BusinessAnalyticsData getBusinessAnalyticsMetrics() {
-        BusinessAnalyticsData analytics = new BusinessAnalyticsData();
-        Date today = Date.today();
-        analytics.requestsSent = [SELECT COUNT() FROM Signature_Request__c WHERE CreatedDate >= :today];
-        analytics.emailsOpened = 0; // Cannot be tracked without a tracking service
-        analytics.documentsViewed = 0; // Cannot be tracked without a tracking service
-        analytics.signaturesCompletedToday = [SELECT COUNT() FROM Signature_Request__c WHERE Status__c = 'Signed' AND DAY_ONLY(CompletedDate__c) = :today];
-        if (analytics.requestsSent > 0) {
-            analytics.completionRate = (Decimal.valueOf(analytics.signaturesCompletedToday) * 100 / analytics.requestsSent).setScale(0);
-        } else {
-            analytics.completionRate = 0;
-        }
-        AggregateResult[] avgTimeResult = [SELECT AVG(Time_To_Complete_Hours__c) avgTime FROM Signature_Request__c WHERE Status__c = 'Signed' AND CreatedDate >= :System.today().addDays(-7)];
-        if (avgTimeResult!= null &&!avgTimeResult.isEmpty() && avgTimeResult[0].get('avgTime')!= null) {
-            analytics.avgTimeToSignHours = ((Decimal)avgTimeResult[0].get('avgTime')).setScale(2);
-        } else {
-            analytics.avgTimeToSignHours = 0;
-        }
-        analytics.signatureMethodsUsed = new Map<String, Integer>{'Typed' => 0, 'Drawn' => 0, 'Uploaded' => 0};
-        for(AggregateResult ar : [SELECT SignatureMethod__c, COUNT(Id) total FROM Signature_Request__c WHERE Status__c = 'Signed' AND DAY_ONLY(CompletedDate__c) = :today AND SignatureMethod__c!= null GROUP BY SignatureMethod__c]) {
-            analytics.signatureMethodsUsed.put((String)ar.get('SignatureMethod__c'), (Integer)ar.get('total'));
-        }
-        analytics.recentActivity = getRecentActivityFeed();
-        return analytics;
+  // CORRECTED VERSION
+// FINAL CORRECTED VERSION
+private static BusinessAnalyticsData getBusinessAnalyticsMetrics() {
+    BusinessAnalyticsData analytics = new BusinessAnalyticsData();
+    Date today = Date.today();
+
+    // --- Metrics for Today's Funnel ---
+    analytics.requestsSent = [SELECT COUNT() FROM Signature_Request__c WHERE CreatedDate >= :today];
+    analytics.signaturesCompletedToday = [
+        SELECT COUNT()
+        FROM Signature_Request__c
+        WHERE (Status__c = 'Signed' OR Status__c = 'Completed')
+        AND DAY_ONLY(CompletedDate__c) = :today
+    ];
+
+    // --- Key Performance Indicators (KPIs) ---
+    // Calculate Completion Rate
+    if (analytics.requestsSent > 0) {
+        analytics.completionRate = (Decimal.valueOf(analytics.signaturesCompletedToday) * 100 / analytics.requestsSent).setScale(0);
+    } else {
+        analytics.completionRate = 0;
     }
+
+    // Calculate Average Time to Sign (7 Days)
+    AggregateResult[] avgTimeResult = [
+        SELECT AVG(Time_To_Complete_Hours__c) avgTime
+        FROM Signature_Request__c
+        WHERE (Status__c = 'Signed' OR Status__c = 'Completed')
+        AND CreatedDate >= :System.today().addDays(-7)
+    ];
+    if (avgTimeResult!= null && !avgTimeResult.isEmpty() && avgTimeResult[0].get('avgTime')!= null) {
+        analytics.avgTimeToSignHours = ((Decimal)avgTimeResult[0].get('avgTime')).setScale(2);
+    } else {
+        analytics.avgTimeToSignHours = 0;
+    }
+
+    // --- SIGNATURE METHOD COUNT - DEFINITIVE FIX ---
+    // Initialize map with correct keys AND an "Other" category for nulls
+    analytics.signatureMethodsUsed = new Map<String, Integer>{'Type' => 0, 'Draw' => 0, 'Upload' => 0, 'Other' => 0};
+
+    // Query all completed signatures from today, grouping by method (including nulls)
+    List<AggregateResult> methodCounts = [
+        SELECT SignatureMethod__c, COUNT(Id) total
+        FROM Signature_Request__c
+        WHERE (Status__c = 'Signed' OR Status__c = 'Completed')
+        AND DAY_ONLY(CompletedDate__c) = :today
+        GROUP BY SignatureMethod__c // Removed "!= null" to catch everything
+    ];
+
+    // Loop through results and populate the map
+    for(AggregateResult ar : methodCounts) {
+        String methodName = (String)ar.get('SignatureMethod__c');
+        Integer total = (Integer)ar.get('total');
+
+        if (methodName == null) {
+            // If the method is null, add its count to the "Other" category
+            analytics.signatureMethodsUsed.put('Other', analytics.signatureMethodsUsed.get('Other') + total);
+        } else if (analytics.signatureMethodsUsed.containsKey(methodName)) {
+            // If the method is a known key, update its count
+            analytics.signatureMethodsUsed.put(methodName, total);
+        }
+    }
+    // --- END OF FIX ---
+
+    analytics.recentActivity = getRecentActivityFeed();
+    return analytics;
+}
+
+
 
     private static List<ActivityItem> getRecentActivityFeed() {
         List<ActivityItem> feed = new List<ActivityItem>();

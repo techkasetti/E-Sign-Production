@@ -28,7 +28,7 @@ public static DocumentDetailsWrapper getDocumentDetails(String documentId) {
     try {
         // Query for the main document record
         result.document = [
-            SELECT Id, DocumentTitle__c, CreatedDate, ProcessingStatus__c, 
+            SELECT Id, DocumentTitle__c, CreatedDate__c, ProcessingStatus__c, 
                    ComplianceStatus__c, GeneratedClause__c 
             FROM DocumentLifecycleConfiguration__c 
             WHERE Id = :documentId 
@@ -37,10 +37,10 @@ public static DocumentDetailsWrapper getDocumentDetails(String documentId) {
 
         // Query for all related signature requests
         result.signatureRequests = [
-            SELECT Id, SignerName__c, SignerEmail__c, Status__c, CompletedDate__c
+            SELECT Id, SignerName__c,CreatedDate__c, SignerEmail__c, Status__c, CompletedDate__c
             FROM Signature_Request__c
             WHERE DocumentId__c = :documentId
-            ORDER BY CreatedDate DESC
+            ORDER BY CreatedDate__c DESC
         ];
 
         return result;
@@ -61,6 +61,7 @@ public static DocumentDetailsWrapper getDocumentDetails(String documentId) {
                 Role__c = role,
                 ContractType__c = contractType,
                 DocumentTitle__c = documentTitle,
+                CreatedDate__c = System.now(),
                 GeneratedClause__c = generatedClause,
                 ProcessingStatus__c = 'Generated'
             );

@@ -89,6 +89,9 @@ public static Id saveVerifiedFaceImage(String imageBase64) {
     return cv.Id;
 }
 
+
+
+
 // Wrapper classes
 public class FaceCompareResult {
     @AuraEnabled public Decimal confidence;
